@@ -2,7 +2,8 @@ const pool = require('../config/db');
 
 class ERPModel {
 
-    // Orders read operations
+    // ═══════════════════════ ORDERS ═══════════════════════
+
     async getAllOrders(status = 'All', page = 1, limit = 10) {
         const offset = (page - 1) * limit;
         let query, countQuery, params, countParams;
@@ -83,7 +84,104 @@ class ERPModel {
         }
     }
 
-    // Inventory operations
+    async approveOrderTransaction(orderId) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const orderRes = await client.query('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [orderId]);
+            if (orderRes.rows.length === 0) throw new Error('Order not found');
+            const order = orderRes.rows[0];
+
+            if (order.status !== 'Pending')
+                throw new Error(`Cannot approve order with status "${order.status}"`);
+
+            const itemRes = await client.query('SELECT * FROM inventory WHERE id = $1 FOR UPDATE', [order.item_id]);
+            if (itemRes.rows.length === 0) throw new Error('Inventory item not found');
+            const item = itemRes.rows[0];
+
+            if (item.qty < order.req_qty)
+                throw new Error(`Insufficient stock. Required: ${order.req_qty}, Available: ${item.qty}`);
+
+            await client.query('UPDATE inventory SET qty = qty - $1 WHERE id = $2', [order.req_qty, order.item_id]);
+            await client.query("UPDATE orders SET status = 'Approved' WHERE id = $1", [orderId]);
+
+            await client.query('COMMIT');
+            return { success: true, message: `Order ${order.order_id} approved. Stock deducted: ${order.req_qty} units.` };
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+    }
+
+    async completeOrder(orderId) {
+        const { rows } = await pool.query('SELECT * FROM orders WHERE id = $1', [orderId]);
+        if (rows.length === 0) throw new Error('Order not found');
+        if (rows[0].status !== 'Approved')
+            throw new Error(`Cannot complete order with status "${rows[0].status}"`);
+
+        await pool.query("UPDATE orders SET status = 'Completed' WHERE id = $1", [orderId]);
+        return { success: true, message: `Order ${rows[0].order_id} marked as completed.` };
+    }
+
+    async cancelOrder(orderId) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const orderRes = await client.query('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [orderId]);
+            if (orderRes.rows.length === 0) throw new Error('Order not found');
+            const order = orderRes.rows[0];
+
+            if (!['Pending', 'Approved'].includes(order.status))
+                throw new Error(`Cannot cancel order with status "${order.status}"`);
+
+            if (order.status === 'Approved') {
+                await client.query('UPDATE inventory SET qty = qty + $1 WHERE id = $2', [order.req_qty, order.item_id]);
+            }
+
+            await client.query("UPDATE orders SET status = 'Canceled' WHERE id = $1", [orderId]);
+            await client.query('COMMIT');
+
+            const extra = order.status === 'Approved' ? ` Stock restored: ${order.req_qty} units.` : '';
+            return { success: true, message: `Order ${order.order_id} canceled.${extra}` };
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+    }
+
+    async returnOrder(orderId) {
+        const client = await pool.connect();
+        try {
+            await client.query('BEGIN');
+
+            const orderRes = await client.query('SELECT * FROM orders WHERE id = $1 FOR UPDATE', [orderId]);
+            if (orderRes.rows.length === 0) throw new Error('Order not found');
+            const order = orderRes.rows[0];
+
+            if (order.status !== 'Completed')
+                throw new Error(`Cannot return order with status "${order.status}"`);
+
+            await client.query('UPDATE inventory SET qty = qty + $1 WHERE id = $2', [order.req_qty, order.item_id]);
+            await client.query("UPDATE orders SET status = 'Returned' WHERE id = $1", [orderId]);
+
+            await client.query('COMMIT');
+            return { success: true, message: `Order ${order.order_id} returned. Stock restored: ${order.req_qty} units.` };
+        } catch (err) {
+            await client.query('ROLLBACK');
+            throw err;
+        } finally {
+            client.release();
+        }
+    }
+
+    // ═══════════════════════ INVENTORY ═══════════════════════
+
     async getAllInventory() {
         const { rows } = await pool.query(
             'SELECT * FROM inventory ORDER BY category ASC, item_name ASC'
@@ -98,7 +196,8 @@ class ERPModel {
         return rows;
     }
 
-    // Dashboard metrics
+    // ═══════════════════════ DASHBOARD ═══════════════════════
+
     async getDashboardMetrics() {
         const client = await pool.connect();
         try {
