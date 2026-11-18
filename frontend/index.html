@@ -211,6 +211,240 @@
 
         <!-- Main Content Scroll Area -->
         <main class="flex-1 overflow-y-auto p-8 bg-[#f8fafc]" id="main-content-container">
+
+            <!-- TAB 1: DASHBOARD VIEW                                    -->
+            <div id="view-dashboard" class="space-y-6 fade-in">
+                <!-- KPI Metric Cards -->
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                    <div
+                        class="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Total Sales Revenue
+                            </p>
+                            <h3 class="mt-2 flex items-baseline gap-1.5 whitespace-nowrap" id="dash-revenue">
+                                <span class="text-xs sm:text-sm font-semibold text-gray-400">Rs.</span>
+                                <span class="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight tabular-nums"><i
+                                        class="fa-solid fa-circle-notch spinner text-base text-gray-300"></i></span>
+                            </h3>
+                        </div>
+                        <span
+                            class="inline-flex items-center gap-1 text-emerald-600 text-xs font-semibold mt-3 bg-emerald-50 px-2 py-1 rounded-lg w-fit">
+                            <i class="fa-solid fa-check-double"></i> Approved & Completed
+                        </span>
+                    </div>
+
+                    <div
+                        class="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Active Orders</p>
+                            <h3 class="text-xl lg:text-2xl font-bold text-gray-900 mt-2 tracking-tight tabular-nums"
+                                id="dash-active-orders">
+                                <i class="fa-solid fa-circle-notch spinner text-base text-gray-300"></i>
+                            </h3>
+                        </div>
+                        <span
+                            class="inline-flex items-center gap-1 text-blue-600 text-xs font-semibold mt-3 bg-blue-50 px-2 py-1 rounded-lg w-fit">
+                            <i class="fa-solid fa-clock"></i> In Fulfillment Pipeline
+                        </span>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs cursor-pointer hover:border-rose-200 transition-all flex flex-col justify-between"
+                        onclick="switchTab('lowstock')">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Reorder Alerts</p>
+                            <h3 class="text-xl lg:text-2xl font-bold text-rose-600 mt-2 tracking-tight tabular-nums"
+                                id="dash-low-stock">
+                                <i class="fa-solid fa-circle-notch spinner text-base text-gray-300"></i>
+                            </h3>
+                        </div>
+                        <span
+                            class="inline-flex items-center gap-1 text-rose-600 text-xs font-semibold mt-3 bg-rose-50 px-2 py-1 rounded-lg w-fit">
+                            <i class="fa-solid fa-triangle-exclamation"></i> Below Safety Buffer
+                        </span>
+                    </div>
+
+                    <div
+                        class="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between">
+                        <div>
+                            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider">Inventory Valuation
+                            </p>
+                            <h3 class="mt-2 flex items-baseline gap-1.5 whitespace-nowrap" id="dash-inv-value">
+                                <span class="text-xs sm:text-sm font-semibold text-gray-400">Rs.</span>
+                                <span class="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight tabular-nums"><i
+                                        class="fa-solid fa-circle-notch spinner text-base text-gray-300"></i></span>
+                            </h3>
+                        </div>
+                        <span
+                            class="inline-flex items-center gap-1 text-indigo-600 text-xs font-semibold mt-3 bg-indigo-50 px-2 py-1 rounded-lg w-fit">
+                            <i class="fa-solid fa-boxes-stacked"></i> Real-time Stock Value
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Monthly Sales Trends & Critical Parts Reorder Layout -->
+                <div
+                    class="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs flex flex-col lg:flex-row gap-8 items-stretch justify-between">
+                    <div class="w-full lg:w-2/3 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h2 class="text-lg font-bold text-gray-900">Monthly Sales Revenue Trends</h2>
+                                    <p class="text-xs text-gray-400 mt-0.5">Revenue generated from fulfilled & approved
+                                        component shipments</p>
+                                </div>
+                                <span
+                                    class="text-xs bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl font-medium text-gray-600">Last
+                                    6 Months</span>
+                            </div>
+                        </div>
+
+                        <div class="h-64 w-full flex items-end gap-3 pt-6 border-b border-gray-100 pb-2 px-2"
+                            id="sales-trend-chart">
+                            <div class="w-full text-center text-gray-400 text-xs py-24"><i
+                                    class="fa-solid fa-circle-notch spinner mr-2"></i> Loading sales analytics...</div>
+                        </div>
+                    </div>
+
+                    <div
+                        class="w-full lg:w-1/3 bg-gray-50 p-6 rounded-2xl border border-gray-100 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-bold text-gray-900 flex items-center gap-2">
+                                    <i class="fa-solid fa-triangle-exclamation text-rose-500 text-xs"></i> Critical
+                                    Parts Reorder
+                                </h3>
+                                <button onclick="switchTab('lowstock')"
+                                    class="text-xs text-blue-600 hover:text-blue-800 font-semibold">View All</button>
+                            </div>
+                            <p class="text-xs text-gray-500 mb-4">Components that have breached minimum safety reorder
+                                thresholds.</p>
+
+                            <div class="space-y-2.5" id="dash-lowstock-list">
+                                <div class="text-center text-gray-400 text-xs py-6">Checking safety levels...</div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-gray-200/60 mt-4">
+                            <button onclick="switchTab('inventory')"
+                                class="w-full py-2.5 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center justify-center gap-2 transition-all">
+                                <i class="fa-solid fa-warehouse"></i> Open Stock Catalog
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: ORDERS VIEW                                       -->
+            <div id="view-orders" class="space-y-6 hidden fade-in">
+                <div
+                    class="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-900">Customer Orders</h1>
+                        <p class="text-sm text-gray-500 mt-1">Live database connected order lifecycle and stock
+                            allocation</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button onclick="refreshOrders()"
+                            class="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-rotate"></i> Refresh Data
+                        </button>
+                        <button onclick="openNewOrderModal()"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl shadow-xs transition-all flex items-center gap-2">
+                            <i class="fa-solid fa-plus"></i> New Order
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
+
+                    <div class="flex px-6 overflow-x-auto hide-scrollbar gap-1 border-b border-gray-100">
+                        <button onclick="filterOrders('All', this)"
+                            class="order-tab px-4 py-3.5 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 whitespace-nowrap transition-colors flex items-center gap-2">
+                            Total Orders <span id="count-all"
+                                class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-semibold">0</span>
+                        </button>
+                        <button onclick="filterOrders('Pending', this)"
+                            class="order-tab px-4 py-3.5 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent whitespace-nowrap transition-colors flex items-center gap-2">
+                            Pending Orders <span id="count-pending"
+                                class="text-xs px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">0</span>
+                        </button>
+                        <button onclick="filterOrders('Approved', this)"
+                            class="order-tab px-4 py-3.5 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent whitespace-nowrap transition-colors flex items-center gap-2">
+                            Approved Orders <span id="count-approved"
+                                class="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 font-semibold">0</span>
+                        </button>
+                        <button onclick="filterOrders('Completed', this)"
+                            class="order-tab px-4 py-3.5 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent whitespace-nowrap transition-colors flex items-center gap-2">
+                            Completed Orders <span id="count-completed"
+                                class="text-xs px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 font-semibold">0</span>
+                        </button>
+                        <button onclick="filterOrders('Canceled', this)"
+                            class="order-tab px-4 py-3.5 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent whitespace-nowrap transition-colors flex items-center gap-2">
+                            Canceled Orders <span id="count-canceled"
+                                class="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-semibold">0</span>
+                        </button>
+                        <button onclick="filterOrders('Returned', this)"
+                            class="order-tab px-4 py-3.5 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent whitespace-nowrap transition-colors flex items-center gap-2">
+                            Returned Orders <span id="count-returned"
+                                class="text-xs px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 font-semibold">0</span>
+                        </button>
+                    </div>
+
+                    <div
+                        class="p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-gray-100 bg-gray-50/50">
+                        <div class="flex items-center gap-3 w-full sm:w-auto">
+                            <div class="relative w-72">
+                                <span
+                                    class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+                                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                                </span>
+                                <input type="text" id="order-table-search" oninput="debounceFilterOrders()"
+                                    placeholder="Search ID, customer, part number..."
+                                    class="w-full bg-white border border-gray-200 rounded-xl pl-8 pr-3 py-2 text-xs text-gray-700 focus:outline-none focus:border-gray-400 shadow-2xs">
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4 w-full sm:w-auto justify-end">
+                            <span class="text-xs text-gray-500 font-medium whitespace-nowrap"
+                                id="orders-pagination-info">Page 1 of 1</span>
+                            <div class="flex items-center gap-1">
+                                <button id="btn-prev-page" onclick="changeOrderPage(-1)" class="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-500 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
+                                    <i class="fa-solid fa-chevron-left text-xs"></i>
+                                </button>
+                                <button id="btn-next-page" onclick="changeOrderPage(1)" class="w-8 h-8 rounded-lg border border-gray-200 bg-white flex items-center justify-center text-gray-700 hover:bg-gray-50 disabled:opacity-30 disabled:cursor-not-allowed">
+                                    <i class="fa-solid fa-chevron-right text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Responsive, Non-Wrapping Order Table -->
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr
+                                    class="border-b border-gray-100 text-xs font-semibold text-gray-400 uppercase tracking-wider bg-gray-50/30">
+                                    <th class="py-3.5 px-6 whitespace-nowrap">Customer Name</th>
+                                    <th class="py-3.5 px-5 whitespace-nowrap">Status</th>
+                                    <th class="py-3.5 px-5 whitespace-nowrap">Order ID</th>
+                                    <th class="py-3.5 px-5 whitespace-nowrap">Part Number / Item</th>
+                                    <th class="py-3.5 px-5 text-center whitespace-nowrap">Req Qty</th>
+                                    <th class="py-3.5 px-5 whitespace-nowrap">Due Date</th>
+                                    <th class="py-3.5 px-5 text-right whitespace-nowrap">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100 text-sm" id="orders-table-body">
+                                <tr>
+                                    <td colspan="7" class="py-8 text-center text-gray-400"><i
+                                            class="fa-solid fa-circle-notch spinner mr-2"></i> Connecting to Backend...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </main>
     </div>
 </div>
