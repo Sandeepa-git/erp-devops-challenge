@@ -779,6 +779,447 @@
             }
         }
 
+        async function renderDashboard() {
+            try {
+                const stats = await apiClient.getDashboardStats();
+                const formattedRev = Number(stats.totalRevenue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                const formattedInv = Number(stats.inventoryValue).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                document.getElementById('dash-revenue').innerHTML = `<span class="text-xs sm:text-sm font-semibold text-gray-400">Rs.</span><span class="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight tabular-nums">${formattedRev}</span>`;
+                document.getElementById('dash-active-orders').innerText = stats.activeOrders.toLocaleString();
+                document.getElementById('dash-low-stock').innerText = stats.lowStockCount.toLocaleString();
+                document.getElementById('dash-inv-value').innerHTML = `<span class="text-xs sm:text-sm font-semibold text-gray-400">Rs.</span><span class="text-xl lg:text-2xl font-bold text-gray-900 tracking-tight tabular-nums">${formattedInv}</span>`;
+
+                const lowBadge = document.getElementById('badge-low-stock');
+                const headerNotif = document.getElementById('header-notification-count');
+                if (stats.lowStockCount > 0) {
+                    lowBadge.innerText = stats.lowStockCount;
+                    lowBadge.classList.remove('hidden');
+                    headerNotif.innerText = stats.lowStockCount;
+                } else {
+                    lowBadge.classList.add('hidden');
+                    headerNotif.innerText = '0';
+                }
+
+                const pendBadge = document.getElementById('badge-pending-orders');
+                if (stats.pendingOrders > 0) {
+                    pendBadge.innerText = stats.pendingOrders;
+                    pendBadge.classList.remove('hidden');
+                } else {
+                    pendBadge.classList.add('hidden');
+                }
+
+                renderSalesTrendsChart();
+                renderCriticalReorderWidget();
+            } catch (err) {
+                console.error('Failed to load dashboard:', err);
+            }
+        }
+
+        async function renderSalesTrendsChart() {
+            const container = document.getElementById('sales-trend-chart');
+            try {
+                const trends = await apiClient.getMonthlySalesTrends();
+                if (!trends || trends.length === 0) {
+                    container.innerHTML = '<div class="w-full text-center text-gray-400 text-xs py-20">No monthly distribution data recorded yet.</div>';
+                    return;
+                }
+
+                const maxRevenue = Math.max(...trends.map(t => t.revenue), 1000);
+                container.innerHTML = '';
+
+                const colorClasses = [
+                    'bg-blue-100 hover:bg-blue-200',
+                    'bg-blue-200 hover:bg-blue-300',
+                    'bg-blue-300 hover:bg-blue-400',
+                    'bg-blue-400 hover:bg-blue-500',
+                    'bg-blue-500 hover:bg-blue-600',
+                    'bg-blue-600 hover:bg-blue-700 shadow-sm'
+                ];
+
+                trends.forEach((t, index) => {
+                    const heightPercent = Math.max(15, Math.round((t.revenue / maxRevenue) * 100));
+                    const color = colorClasses[Math.min(index, colorClasses.length - 1)];
+
+                    const bar = document.createElement('div');
+                    bar.className = `flex-1 ${color} rounded-t-lg transition-all relative group cursor-pointer`;
+                    bar.style.height = `${heightPercent}%`;
+                    bar.innerHTML = `
+                        <div class="absolute -top-8 left-1/2 -translate-x-1/2 bg-gray-900 text-white text-[10px] font-medium tabular-nums px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-sm">
+                            Rs. ${Math.round(t.revenue).toLocaleString()} (${t.order_count} orders)
+                        </div>
+                        <span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[11px] font-semibold text-gray-500">${t.month}</span>
+                    `;
+                    container.appendChild(bar);
+                });
+            } catch (err) {
+                container.innerHTML = '<div class="w-full text-center text-rose-500 text-xs py-20">Failed to load sales chart.</div>';
+            }
+        }
+
+        async function renderCriticalReorderWidget() {
+            const list = document.getElementById('dash-lowstock-list');
+            try {
+                const lowItems = await apiClient.getLowStockItems();
+                if (!lowItems || lowItems.length === 0) {
+                    list.innerHTML = `
+                        <div class="text-center py-6 text-emerald-600 text-xs font-semibold bg-emerald-50 rounded-xl">
+                            <i class="fa-solid fa-circle-check text-sm mr-1"></i> All stock levels above safe threshold.
+                        </div>
+                    `;
+                    return;
+                }
+
+                list.innerHTML = '';
+                lowItems.slice(0, 4).forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'p-3 rounded-xl bg-white border border-gray-100 flex items-center justify-between shadow-2xs';
+                    div.innerHTML = `
+                        <div class="min-w-0 pr-2">
+                            <div class="font-mono text-xs font-semibold text-gray-900 whitespace-nowrap">${item.part_number}</div>
+                            <div class="text-[11px] text-gray-500 truncate max-w-[150px]">${item.item_name}</div>
+                        </div>
+                        <div class="text-right whitespace-nowrap shrink-0">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-50 text-rose-700 tabular-nums border border-rose-100">${item.qty} in stock</span>
+                            <div class="text-[10px] text-gray-400 mt-0.5 tabular-nums">Min: ${item.reorder_level}</div>
+                        </div>
+                    `;
+                    list.appendChild(div);
+                });
+            } catch (err) {
+                list.innerHTML = '<div class="text-xs text-rose-500 text-center py-4">Failed to load alerts.</div>';
+            }
+        }
+
+        async function renderOrders() {
+            const tbody = document.getElementById('orders-table-body');
+            tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-gray-400"><i class="fa-solid fa-circle-notch spinner mr-2"></i> Fetching live orders...</td></tr>`;
+
+            try {
+                apiClient.getOrderCounts().then(counts => {
+                    document.getElementById('count-all').innerText = counts.All || 0;
+                    document.getElementById('count-pending').innerText = counts.Pending || 0;
+                    document.getElementById('count-approved').innerText = counts.Approved || 0;
+                    document.getElementById('count-completed').innerText = counts.Completed || 0;
+                    document.getElementById('count-canceled').innerText = counts.Canceled || 0;
+                    document.getElementById('count-returned').innerText = counts.Returned || 0;
+                }).catch(() => { });
+
+                const result = await apiClient.getOrders(state.orderFilterStatus, state.orderPage, state.orderLimit);
+                state.orderTotalPages = result.totalPages || 1;
+                state.cachedOrders = result.orders || [];
+
+                document.getElementById('orders-pagination-info').innerText = `Page ${result.page} of ${Math.max(1, result.totalPages)} (${result.total} orders)`;
+                document.getElementById('btn-prev-page').disabled = state.orderPage <= 1;
+                document.getElementById('btn-next-page').disabled = state.orderPage >= state.orderTotalPages;
+
+                renderOrdersTable(state.cachedOrders);
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-rose-500">Failed to load orders from backend.</td></tr>`;
+            }
+        }
+
+        function renderOrdersTable(orders) {
+            const tbody = document.getElementById('orders-table-body');
+            tbody.innerHTML = '';
+
+            if (orders.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-sm text-gray-400">No orders found matching status.</td></tr>`;
+                return;
+            }
+
+            orders.forEach(order => {
+                let badgeClass = 'bg-blue-100 text-blue-800';
+                if (order.status === 'Pending') badgeClass = 'bg-amber-100 text-amber-800';
+                if (order.status === 'Approved') badgeClass = 'bg-blue-100 text-blue-800';
+                if (order.status === 'Completed') badgeClass = 'bg-emerald-100 text-emerald-800';
+                if (order.status === 'Canceled') badgeClass = 'bg-gray-100 text-gray-600';
+                if (order.status === 'Returned') badgeClass = 'bg-rose-100 text-rose-800';
+
+                let actionHTML = '';
+                if (order.status === 'Pending') {
+                    actionHTML = `
+                        <button onclick="handleApproveOrder(${order.id})" class="text-blue-600 hover:text-blue-800 font-semibold text-xs mr-3 transition-colors">Approve</button>
+                        <button onclick="handleCancelOrder(${order.id})" class="text-gray-400 hover:text-rose-600 font-medium text-xs transition-colors">Cancel</button>
+                    `;
+                } else if (order.status === 'Approved') {
+                    actionHTML = `
+                        <button onclick="handleCompleteOrder(${order.id})" class="text-emerald-600 hover:text-emerald-800 font-semibold text-xs mr-3 transition-colors">Dispatch</button>
+                        <button onclick="handleCancelOrder(${order.id})" class="text-gray-400 hover:text-rose-600 font-medium text-xs transition-colors">Cancel</button>
+                    `;
+                } else if (order.status === 'Completed') {
+                    actionHTML = `
+                        <button onclick="handleReturnOrder(${order.id})" class="text-gray-500 hover:text-rose-600 font-medium text-xs transition-colors">Return</button>
+                    `;
+                } else {
+                    actionHTML = `<span class="text-xs text-gray-400 italic">Archived</span>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50/80 transition-colors';
+                tr.innerHTML = `
+                    <td class="py-3.5 px-6 whitespace-nowrap font-medium text-gray-900">${order.customer_name}</td>
+                    <td class="py-3.5 px-5 whitespace-nowrap"><span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold ${badgeClass}">${order.status}</span></td>
+                    <td class="py-3.5 px-5 whitespace-nowrap font-mono text-xs font-semibold text-gray-700">${order.order_id}</td>
+                    <td class="py-3.5 px-5 whitespace-nowrap">
+                        <span class="font-mono text-xs font-semibold text-gray-900 block">${order.part_number}</span>
+                        <span class="text-[11px] text-gray-400 block">${order.item_name || ''}</span>
+                    </td>
+                    <td class="py-3.5 px-5 text-center whitespace-nowrap font-semibold tabular-nums text-gray-800">${order.req_qty}</td>
+                    <td class="py-3.5 px-5 whitespace-nowrap text-xs text-gray-500 font-mono">${order.due_date ? new Date(order.due_date).toLocaleDateString() : 'N/A'}</td>
+                    <td class="py-3.5 px-5 text-right whitespace-nowrap">${actionHTML}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function filterOrders(status, btnElement) {
+            state.orderFilterStatus = status;
+            state.orderPage = 1;
+
+            document.querySelectorAll('.order-tab').forEach(btn => {
+                btn.className = 'order-tab px-4 py-3.5 text-sm font-medium text-gray-500 hover:text-gray-900 border-b-2 border-transparent whitespace-nowrap transition-colors flex items-center gap-2';
+            });
+            if (btnElement) {
+                btnElement.className = 'order-tab px-4 py-3.5 text-sm font-semibold text-blue-600 border-b-2 border-blue-600 whitespace-nowrap transition-colors flex items-center gap-2';
+            }
+            renderOrders();
+        }
+
+        function changeOrderPage(delta) {
+            const newPage = state.orderPage + delta;
+            if (newPage >= 1 && newPage <= state.orderTotalPages) {
+                state.orderPage = newPage;
+                renderOrders();
+            }
+        }
+
+        let debounceTimer;
+        function debounceFilterOrders() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                const term = document.getElementById('order-table-search').value.toLowerCase().trim();
+                if (!term) {
+                    renderOrdersTable(state.cachedOrders);
+                    return;
+                }
+                const filtered = state.cachedOrders.filter(o =>
+                    o.order_id.toLowerCase().includes(term) ||
+                    o.customer_name.toLowerCase().includes(term) ||
+                    o.part_number.toLowerCase().includes(term) ||
+                    (o.item_name && o.item_name.toLowerCase().includes(term))
+                );
+                renderOrdersTable(filtered);
+            }, 200);
+        }
+
+        function refreshOrders() {
+            renderOrders();
+        }
+
+        async function handleApproveOrder(id) {
+            try {
+                const res = await apiClient.approveOrder(id);
+                showToast(res.message);
+                renderOrders();
+                renderDashboard();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function handleCompleteOrder(id) {
+            try {
+                const res = await apiClient.completeOrder(id);
+                showToast(res.message);
+                renderOrders();
+                renderDashboard();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function handleCancelOrder(id) {
+            if (!confirm('Cancel this order? Any reserved stock will be credited back.')) return;
+            try {
+                const res = await apiClient.cancelOrder(id);
+                showToast(res.message);
+                renderOrders();
+                renderDashboard();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function handleReturnOrder(id) {
+            if (!confirm('Process customer return? Stock will be restored to inventory.')) return;
+            try {
+                const res = await apiClient.returnOrder(id);
+                showToast(res.message);
+                renderOrders();
+                renderDashboard();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        async function renderInventory() {
+            const tbody = document.getElementById('inventory-table-body');
+            tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-gray-400"><i class="fa-solid fa-circle-notch spinner mr-2"></i> Loading stock catalog...</td></tr>`;
+
+            try {
+                const items = await apiClient.getInventory();
+                state.cachedInventory = items || [];
+                document.getElementById('badge-total-items').innerText = `${items.length} parts`;
+                populateOrderDropdown(items);
+                filterInventoryTable();
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-rose-500">Failed to load inventory.</td></tr>`;
+            }
+        }
+
+        function filterInventoryTable() {
+            const cat = document.getElementById('inventory-cat-filter').value;
+            const term = document.getElementById('inventory-search').value.toLowerCase().trim();
+            const tbody = document.getElementById('inventory-table-body');
+
+            const filtered = state.cachedInventory.filter(item => {
+                const matchCat = cat === 'All' || item.category === cat;
+                const matchTerm = !term ||
+                    item.part_number.toLowerCase().includes(term) ||
+                    item.item_name.toLowerCase().includes(term);
+                return matchCat && matchTerm;
+            });
+
+            tbody.innerHTML = '';
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-gray-400">No components matched.</td></tr>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const isLow = item.qty < item.reorder_level;
+                const badge = isLow
+                    ? '<span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-rose-100 text-rose-800 whitespace-nowrap">Low Stock</span>'
+                    : '<span class="inline-flex items-center px-2.5 py-1 rounded text-xs font-semibold bg-emerald-100 text-emerald-800 whitespace-nowrap">In Stock</span>';
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50/80 transition-colors';
+                tr.innerHTML = `
+                    <td class="py-3.5 px-5 font-mono text-xs font-semibold text-gray-900 whitespace-nowrap">${item.part_number}</td>
+                    <td class="py-3.5 px-5 font-medium text-gray-900 whitespace-nowrap">${item.item_name}</td>
+                    <td class="py-3.5 px-5 whitespace-nowrap"><span class="px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-600">${item.category}</span></td>
+                    <td class="py-3.5 px-5 text-right font-medium tabular-nums text-gray-800 whitespace-nowrap">Rs. ${parseFloat(item.unit_price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                    <td class="py-3.5 px-5 text-center font-semibold tabular-nums whitespace-nowrap ${isLow ? 'text-rose-600' : 'text-gray-900'}">${item.qty}</td>
+                    <td class="py-3.5 px-5 text-center tabular-nums text-gray-500 whitespace-nowrap">${item.reorder_level}</td>
+                    <td class="py-3.5 px-5 text-right whitespace-nowrap">${badge}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        async function renderLowStockTab() {
+            const tbody = document.getElementById('lowstock-table-body');
+            tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-gray-400"><i class="fa-solid fa-circle-notch spinner mr-2"></i> Querying reorder alerts...</td></tr>`;
+
+            try {
+                const items = await apiClient.getLowStockItems();
+                tbody.innerHTML = '';
+
+                if (items.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="7" class="py-12 text-center text-emerald-600 font-semibold bg-emerald-50/40">
+                                <i class="fa-solid fa-check-circle text-lg mb-1 block"></i>
+                                All components currently meet or exceed minimum safety buffer stock!
+                            </td>
+                        </tr>
+                    `;
+                    return;
+                }
+
+                items.forEach(item => {
+                    const deficit = item.reorder_level - item.qty;
+                    const priority = item.qty === 0
+                        ? '<span class="px-2.5 py-1 rounded text-xs font-bold bg-rose-600 text-white whitespace-nowrap">CRITICAL OUT OF STOCK</span>'
+                        : '<span class="px-2.5 py-1 rounded text-xs font-semibold bg-amber-500 text-white whitespace-nowrap">HIGH REORDER</span>';
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-rose-50/30 transition-colors';
+                    tr.innerHTML = `
+                        <td class="py-3.5 px-5 font-mono text-xs font-semibold text-gray-900 whitespace-nowrap">${item.part_number}</td>
+                        <td class="py-3.5 px-5 font-medium text-gray-900 whitespace-nowrap">${item.item_name}</td>
+                        <td class="py-3.5 px-5 whitespace-nowrap"><span class="px-2 py-0.5 rounded bg-gray-100 text-xs text-gray-600">${item.category}</span></td>
+                        <td class="py-3.5 px-5 text-center font-semibold tabular-nums text-rose-600 whitespace-nowrap">${item.qty}</td>
+                        <td class="py-3.5 px-5 text-center tabular-nums text-gray-600 whitespace-nowrap">${item.reorder_level}</td>
+                        <td class="py-3.5 px-5 text-center font-semibold tabular-nums text-rose-700 whitespace-nowrap">-${deficit} units</td>
+                        <td class="py-3.5 px-5 text-right whitespace-nowrap">${priority}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                tbody.innerHTML = `<tr><td colspan="7" class="py-8 text-center text-rose-500">Failed to load reorder alerts.</td></tr>`;
+            }
+        }
+
+        function openNewOrderModal() {
+            document.getElementById('new-order-modal').classList.remove('hidden');
+            const d = new Date();
+            d.setDate(d.getDate() + 7);
+            document.getElementById('form-due-date').value = d.toISOString().split('T')[0];
+        }
+
+        function closeNewOrderModal() {
+            document.getElementById('new-order-modal').classList.add('hidden');
+            document.getElementById('create-order-form').reset();
+        }
+
+        function populateOrderDropdown(items) {
+            const select = document.getElementById('form-item-id');
+            select.innerHTML = '<option value="">Select Electronic Component...</option>';
+            items.forEach(item => {
+                const opt = document.createElement('option');
+                opt.value = item.id;
+                opt.innerText = `[${item.part_number}] ${item.item_name} (Stock: ${item.qty} @ Rs. ${parseFloat(item.unit_price).toFixed(2)})`;
+                select.appendChild(opt);
+            });
+        }
+
+        async function handleCreateOrder(e) {
+            e.preventDefault();
+            const customer_name = document.getElementById('form-customer-name').value.trim();
+            const item_id = document.getElementById('form-item-id').value;
+            const req_qty = document.getElementById('form-req-qty').value;
+            const due_date = document.getElementById('form-due-date').value;
+
+            try {
+                const res = await apiClient.createOrder({ customer_name, item_id, req_qty, due_date });
+                showToast(res.message);
+                closeNewOrderModal();
+                renderOrders();
+                renderDashboard();
+            } catch (err) {
+                showToast(err.message, 'error');
+            }
+        }
+
+        function handleGlobalSearch() {
+            const term = document.getElementById('global-search').value.toLowerCase().trim();
+            if (term && state.currentTab !== 'orders') {
+                switchTab('orders');
+            }
+            const orderInput = document.getElementById('order-table-search');
+            if (orderInput) {
+                orderInput.value = term;
+                debounceFilterOrders();
+            }
+        }
+
+        window.onload = function () {
+            renderDashboard();
+            renderInventory();
+        }
     </script>
 </body>
+
 </html>
