@@ -616,8 +616,169 @@
         </div>
     </div>
 
-        </main>
-    </div>
-</div>
+    <!-- ERPAPIClient -->
+    <script>
+        class ERPAPIClient {
+            constructor(baseURL) {
+                this.baseURL = baseURL;
+            }
+
+            async #request(endpoint, options = {}) {
+                try {
+                    const response = await fetch(`${this.baseURL}${endpoint}`, options);
+                    const data = await response.json();
+                    if (!response.ok) {
+                        throw new Error(data.message || `Request failed (${response.status})`);
+                    }
+                    return data;
+                } catch (err) {
+                    console.error(`[API Error] ${endpoint}:`, err);
+                    throw err;
+                }
+            }
+
+            async getDashboardStats() {
+                return await this.#request('/dashboard/stats');
+            }
+
+            async getMonthlySalesTrends() {
+                return await this.#request('/dashboard/trends');
+            }
+
+            async getOrders(status = 'All', page = 1, limit = 10) {
+                return await this.#request(`/orders?status=${encodeURIComponent(status)}&page=${page}&limit=${limit}`);
+            }
+
+            async getOrderCounts() {
+                return await this.#request('/orders/counts');
+            }
+
+            async createOrder(payload) {
+                return await this.#request('/orders', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+            }
+
+            async approveOrder(id) {
+                return await this.#request(`/orders/${id}/approve`, { method: 'POST' });
+            }
+
+            async completeOrder(id) {
+                return await this.#request(`/orders/${id}/complete`, { method: 'POST' });
+            }
+
+            async cancelOrder(id) {
+                return await this.#request(`/orders/${id}/cancel`, { method: 'POST' });
+            }
+
+            async returnOrder(id) {
+                return await this.#request(`/orders/${id}/return`, { method: 'POST' });
+            }
+
+            async getInventory() {
+                return await this.#request('/inventory');
+            }
+
+            async getLowStockItems() {
+                return await this.#request('/inventory/low-stock');
+            }
+        }
+
+        const apiBaseUrl = (window.__ENV__ && window.__ENV__.API_URL)
+            ? window.__ENV__.API_URL
+            : (window.location.protocol === 'file:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                ? 'http://localhost:5000/api'
+                : '/api';
+        const apiClient = new ERPAPIClient(apiBaseUrl);
+
+        const state = {
+            currentTab: 'dashboard',
+            orderFilterStatus: 'All',
+            orderPage: 1,
+            orderLimit: 10,
+            orderTotalPages: 1,
+            cachedInventory: [],
+            cachedOrders: []
+        };
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-gray-900 text-white' : 'bg-rose-600 text-white';
+            const icon = type === 'success' ? 'fa-circle-check text-emerald-400' : 'fa-circle-xmark text-white';
+
+            toast.className = `${bgClass} px-4 py-3 rounded-xl shadow-lg flex items-center gap-2.5 text-xs font-semibold fade-in pointer-events-auto border border-gray-700/50`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span>${msg}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function switchTab(tabName) {
+            state.currentTab = tabName;
+
+            document.querySelectorAll('.menu-item').forEach(el => {
+                el.classList.remove('bg-gray-100', 'text-gray-900', 'font-semibold');
+                el.classList.add('text-gray-600', 'font-medium');
+                const icon = el.querySelector('i');
+                if (icon && !icon.classList.contains('text-rose-500')) {
+                    icon.classList.remove('text-gray-900');
+                    icon.classList.add('text-gray-400');
+                }
+            });
+
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            if (activeBtn) {
+                activeBtn.classList.add('bg-gray-100', 'text-gray-900', 'font-semibold');
+                activeBtn.classList.remove('text-gray-600', 'font-medium');
+                const activeIcon = activeBtn.querySelector('i');
+                if (activeIcon && !activeIcon.classList.contains('text-rose-500')) {
+                    activeIcon.classList.add('text-gray-900');
+                    activeIcon.classList.remove('text-gray-400');
+                }
+            }
+
+            ['dashboard', 'orders', 'inventory', 'lowstock', 'generic'].forEach(t => {
+                const el = document.getElementById(`view-${t}`);
+                if (el) el.classList.add('hidden');
+            });
+
+            // breadcrumb
+            const breadcrumb = document.getElementById('header-breadcrumb-title');
+
+            if (tabName === 'dashboard') {
+                document.getElementById('view-dashboard').classList.remove('hidden');
+                breadcrumb.innerText = 'Dashboard Overview';
+                renderDashboard();
+            } else if (tabName === 'orders') {
+                document.getElementById('view-orders').classList.remove('hidden');
+                breadcrumb.innerText = 'Customer Orders';
+                renderOrders();
+            } else if (tabName === 'inventory') {
+                document.getElementById('view-inventory').classList.remove('hidden');
+                breadcrumb.innerText = 'Stock Catalog';
+                renderInventory();
+            } else if (tabName === 'lowstock') {
+                document.getElementById('view-lowstock').classList.remove('hidden');
+                breadcrumb.innerText = 'Reorder Alerts';
+                renderLowStockTab();
+            } else {
+                document.getElementById('view-generic').classList.remove('hidden');
+                const titleMap = {
+                    'requests': 'Supplier Requests',
+                    'users': 'Users & Role Permissions',
+                    'settings': 'System Settings'
+                };
+                breadcrumb.innerText = titleMap[tabName] || 'Module View';
+            }
+        }
+
+    </script>
 </body>
 </html>
