@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOLTEX | Electronic Parts Distribution ERP</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter & JetBrains Mono Fonts-->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f8fafc',
+                            100: '#f1f5f9',
+                            800: '#1e293b',
+                            900: '#0f172a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .fade-in {
+            animation: fadeIn 0.25s ease-in-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(4px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+
+        .spinner {
+            animation: spin 0.9s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-[#fcfcfd] font-sans text-gray-800 antialiased h-screen flex overflow-hidden">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside
+        class="w-64 bg-white border-r border-gray-100 flex flex-col justify-between shrink-0 select-none transition-all duration-300">
+        <div>
+            <!-- Logo Section -->
+            <div class="h-16 flex items-center px-6 border-b border-gray-100 gap-3">
+                <div
+                    class="w-9 h-9 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                    V
+                </div>
+                <div>
+                    <span class="font-bold text-xl tracking-tight text-gray-900 block leading-none">VOLTEX</span>
+                    <span class="text-[10px] text-gray-400 font-semibold uppercase tracking-wider">Parts
+                        Distribution</span>
+                </div>
+            </div>
+
+            <!-- Menu Items -->
+            <div class="px-4 py-6">
+                <p class="text-[11px] font-semibold tracking-wider text-gray-400 uppercase px-3 mb-3">Main Menu</p>
+                <nav class="space-y-1">
+                    <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard"
+                        class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-900 shadow-xs transition-colors">
+                        <i class="fa-solid fa-chart-pie w-5 text-gray-900"></i> Dashboard
+                    </a>
+                    <a href="#" onclick="switchTab('orders')" id="nav-orders"
+                        class="menu-item flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-cart-shopping w-5 text-gray-400"></i> Customer Orders
+                        </div>
+                        <span id="badge-pending-orders"
+                            class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-bold hidden">0</span>
+                    </a>
+                    <a href="#" onclick="switchTab('inventory')" id="nav-inventory"
+                        class="menu-item flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-warehouse w-5 text-gray-400"></i> Stock Catalog
+                        </div>
+                        <span id="badge-total-items"
+                            class="text-[10px] px-2 py-0.5 rounded-full bg-gray-100 text-gray-600 font-semibold">...</span>
+                    </a>
+                    <a href="#" onclick="switchTab('lowstock')" id="nav-lowstock"
+                        class="menu-item flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-triangle-exclamation w-5 text-rose-500"></i> Reorder Alerts
+                        </div>
+                        <span id="badge-low-stock"
+                            class="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold hidden">0</span>
+                    </a>
+                    <a href="#" onclick="switchTab('requests')" id="nav-requests"
+                        class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                        <i class="fa-solid fa-file-lines w-5 text-gray-400"></i> Supplier Requests
+                    </a>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Footer Menu (Users & Settings) -->
+        <div class="p-4 border-t border-gray-100 space-y-1">
+            <a href="#" onclick="switchTab('users')" id="nav-users"
+                class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                <i class="fa-solid fa-users w-5 text-gray-400"></i> Users & Roles
+            </a>
+            <a href="#" onclick="switchTab('settings')" id="nav-settings"
+                class="menu-item flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                <i class="fa-solid fa-gear w-5 text-gray-400"></i> Settings
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Wrapper -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden bg-white">
+
+        <!-- Top Header Bar -->
+        <header class="h-16 border-b border-gray-100 flex items-center justify-between px-8 bg-white shrink-0">
+            <!-- Header Page Title -->
+            <div class="flex items-center gap-2.5 text-sm">
+                <span class="text-gray-900 font-semibold" id="header-breadcrumb-title">Dashboard Overview</span>
+            </div>
+
+            <!-- Search, Notifications & Profile -->
+            <div class="flex items-center gap-5">
+                <!-- Search Box -->
+                <div class="relative w-72">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                    </span>
+                    <input type="text" id="global-search" oninput="handleGlobalSearch()"
+                        placeholder="Search components, orders, parts..."
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl pl-9 pr-4 py-2 text-xs text-gray-700 focus:outline-none focus:border-gray-400 focus:bg-white transition-all">
+                </div>
+
+                <!-- Notifications -->
+                <button onclick="switchTab('lowstock')"
+                    class="relative w-9 h-9 rounded-xl border border-gray-200 flex items-center justify-center text-gray-600 hover:bg-gray-50 transition-colors"
+                    title="Stock Notifications">
+                    <i class="fa-regular fa-bell text-sm"></i>
+                    <span
+                        class="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white"
+                        id="header-notification-count">0</span>
+                </button>
+
+                <!-- User Profile -->
+                <div class="flex items-center gap-3 pl-2 border-l border-gray-200">
+                    <div
+                        class="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 font-semibold text-xs flex items-center justify-center">
+                        P
+                    </div>
+                    <span class="text-sm font-medium text-gray-800">m3thum.09</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content Scroll Area -->
+        <main class="flex-1 overflow-y-auto p-8 bg-[#f8fafc]" id="main-content-container">
+        </main>
+    </div>
+</div>
+</body>
+</html>
