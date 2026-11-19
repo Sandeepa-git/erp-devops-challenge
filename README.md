@@ -6,18 +6,22 @@ Welcome to the **CloudSpace team selection challenge**. Read this whole file bef
 
 ## 📜 The Scenario
 
-**Thrusha Motors (Pvt) Ltd.** uses an internal **ERP system** to manage its electronic parts inventory, customer orders, low-stock alerts and sales dashboard.
+**Thrusha Motors (Pvt) Ltd.** uses an internal **ERP system** to manage its electronic parts inventory, customer orders, low-stock alerts and sales dashboard. An **intern** worked on this system, made a few changes "to make it work on my machine" and pushed them straight to the repository. Since then, nothing works the way it should. The company has called you in as a **Senior DevOps Engineer** to troubleshoot it, fix it and ship it.
 
-An **intern** built and changed this system. Because of the intern's mistakes, the system **does not work properly** anymore.
+The trouble starts with the **frontend**. When it is started by hand, the dev server comes up without complaint, but the browser shows **nothing except a white page**. Every React app needs a **front door**: the very first page the browser loads is supposed to lead it into the app. It looks like the intern pointed that page at a door that **nobody lives behind**.
 
-The company has now called you in as a **Senior DevOps Engineer** to troubleshoot it. Your job is to:
+Once the page finally loads, the **Backend Sync** box in the sidebar stays **red** and the orders never arrive, even though the backend answers perfectly when it is called directly. The frontend is **knocking on the wrong door**. Watch **where the browser sends its requests**, then listen to the backend: it tells you **which port it lives on** and **under which path it serves its data**. Somewhere in the frontend code there is **a single place** that decides the backend's address.
 
-1. Find and fix every problem the intern left behind.
-2. Make the whole system start with **one command**: `docker compose up -d --build`.
-3. Build a **GitHub Actions** workflow that pushes the **frontend** and **backend** images to **Docker Hub**, tagged with **your team name**.
+Next, the intern tried Docker. The **backend image does not even build**. npm is standing in **one room**, while the **list of things it needs to install** was left behind in **another room**. Ask yourself: where is the build **actually standing** when it runs?
+
+The **frontend image** is no better. The React app compiles, but the **final stage cannot find what it is supposed to serve**. The intern copied this setup from an old project that used a **different build tool**, and every build tool puts its finished product in **its own place**.
+
+When everything is fixed, the whole system must come up with **one single command**: `docker compose up -d --build`. The database must be **healthy**, the ERP must open at http://localhost:3000, the sidebar must show a green **Synced (:5000)**, and orders must be able to be approved, completed, cancelled and returned.
+
+Finally, Thrusha Motors wants delivery to be automatic. Build a **GitHub Actions** workflow inside `.github/workflows/` that runs on every **push to `main`**, logs in to **Docker Hub**, and **builds and pushes both the backend and the frontend images**, tagged with **your team name**. Keep the access token out of your files, because GitHub has **repository secrets** for exactly this. The official Docker actions on the GitHub Marketplace will help: one of them **logs you in**, another one **builds and pushes**, and you will need it **once per service**, each with its **own build context**.
 
 > [!NOTE]
-> The business logic (orders, inventory, dashboard) is fine. The problems are in **configuration, connections and Dockerfiles**. Read every error message carefully.
+> The business logic (orders, inventory, dashboard) is fine. The problems are only in **configuration, connections and Dockerfiles**. Read every error message carefully.
 
 ---
 
@@ -60,125 +64,18 @@ git branch -M main
 git push -u origin main
 ```
 
-3. Do **all** your work inside your `cloudspace` repository.
+3. Do **all** your work inside **your team's own `cloudspace` repository**, and push every fix to it.
 
 ---
 
-## 🎯 The Tasks
-
-Do the tasks **in order**. Each task gives you a **symptom** and a small **clue**. Finding the real cause is your job.
-
-### Task 1 — Start the Frontend Manually
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**Symptom:** The dev server starts, but http://localhost:3000 shows **only a white blank page**.
-
-> [!TIP]
-> **Clue:** Every React app needs a front door. Check where `index.html` is sending the browser, and check whether anything lives there. Watch the Vite terminal and the browser DevTools Console.
-
----
-
-### Task 2 — Connect the Frontend to the Backend
-
-Start only the database, then run the backend manually:
-
-```bash
-docker compose up -d db
-cd backend
-npm install
-DB_PORT=51434 npm run dev
-```
-
-On Windows PowerShell: `$env:DB_PORT="51434"; npm run dev`
-
-**Symptom:** http://localhost:5000/api/inventory works, but the frontend sidebar shows **Backend Sync** in **red**, and the Orders page stays empty.
-
-> [!TIP]
-> **Clue:** The frontend is knocking on the wrong door. Open DevTools → Network and see **where** the requests go. Compare that with the **port** the backend says it listens on, and the **path** its routes are mounted on. Only one file in `frontend/src` decides where the backend lives.
-
-✅ Done when the sidebar shows a green **Synced (:5000)**.
-
----
-
-### Task 3 — Build the Backend Docker Image
-
-```bash
-docker build -t erp-backend ./backend
-```
-
-**Symptom:** The build fails:
-
-```text
- > [4/5] RUN npm install --omit=dev:
-npm error code ENOENT
-npm error syscall open
-npm error path /app/package.json
-npm error enoent Could not read package.json: Error: ENOENT: no such file or directory, open '/app/package.json'
-------
-Dockerfile:6
-   5 |     COPY package*.json /usr/src/
-   6 | >>> RUN npm install --omit=dev
-ERROR: failed to solve: process "/bin/sh -c npm install --omit=dev" did not complete successfully: exit code: 254
-```
-
-> [!TIP]
-> **Clue:** npm is standing in one folder, but `package.json` was left in another folder. Think about what `WORKDIR` means.
-
----
-
-### Task 4 — Build the Frontend Docker Image
-
-```bash
-docker build -t erp-frontend ./frontend
-```
-
-**Symptom:** The React app compiles, but the last stage fails:
-
-```text
- > [stage-1 4/4] COPY --from=builder /app/build ./:
-------
-Dockerfile:16
-  15 |     RUN rm -rf ./*
-  16 | >>> COPY --from=builder /app/build ./
-ERROR: failed to solve: failed to compute cache key: failed to calculate checksum of ref ...: "/app/build": not found
-```
-
-> [!TIP]
-> **Clue:** The intern copied this Dockerfile from a project that used a **different build tool**. Run `npm run build` in the `frontend` folder and see **which output folder** actually appears.
-
----
-
-### Task 5 — Run the Whole System
-
-```bash
-docker compose up -d --build
-```
-
-✅ Done when:
-
-- `docker compose ps` shows all 3 containers running (`erp_database` is **healthy**).
-- http://localhost:3000 loads the ERP and the sidebar shows **Synced (:5000)**.
-- Orders can be approved, completed, cancelled and returned.
-
----
-
-### Task 6 — Push to Docker Hub with GitHub Actions
-
-Create a GitHub Actions workflow inside `.github/workflows/` that runs on **push to `main`**, logs in to Docker Hub, and **builds and pushes both** the backend and frontend images.
-
-**Docker Hub details (given by the OC):**
+## 🐳 Docker Hub Details
 
 | Item | Value |
 | :--- | :--- |
 | Docker Hub Username | `cloudspace` |
 | Docker Hub Access Token | `jfnjienchecchhedcbhbch` |
 
-Save them as **GitHub repository secrets** (`Settings → Secrets and variables → Actions`):
+Save them as **GitHub repository secrets** in your team's `cloudspace` repository (`Settings → Secrets and variables → Actions`):
 
 | Secret Name | Value |
 | :--- | :--- |
@@ -194,8 +91,6 @@ cloudspace/erp-frontend:<your-team-name>
 
 Team name tag format: lowercase letters, numbers and hyphens only, no spaces.
 Example: team **"Byte Busters"** → `cloudspace/erp-backend:byte-busters`
-
-✅ Done when the Actions run is **green** and both images with your tag are on Docker Hub.
 
 ---
 
