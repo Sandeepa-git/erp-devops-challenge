@@ -2,8 +2,6 @@ const pool = require('../config/db');
 
 class ERPModel {
 
-    // ═══════════════════════ ORDERS ═══════════════════════
-
     async getAllOrders(status = 'All', page = 1, limit = 10) {
         const offset = (page - 1) * limit;
         let query, countQuery, params, countParams;
@@ -180,8 +178,6 @@ class ERPModel {
         }
     }
 
-    // ═══════════════════════ INVENTORY ═══════════════════════
-
     async getAllInventory() {
         const { rows } = await pool.query(
             'SELECT * FROM inventory ORDER BY category ASC, item_name ASC'
@@ -195,8 +191,6 @@ class ERPModel {
         );
         return rows;
     }
-
-    // ═══════════════════════ DASHBOARD ═══════════════════════
 
     async getDashboardMetrics() {
         const client = await pool.connect();

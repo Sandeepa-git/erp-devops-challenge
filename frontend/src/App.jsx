@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { api } from './api';
 
-// Initial electronic components catalog (seeded in PostgreSQL)
-// Ensures components are instantly visible and selectable even before backend finishes starting
 const INITIAL_INVENTORY = [
   { id: 1, item_name: 'Arduino Uno R3', category: 'Microcontrollers', unit_price: 2850.00, qty: 180, reorder_level: 20, part_number: 'MCU-ARD-UNO' },
   { id: 2, item_name: 'ESP32-WROOM-32', category: 'Microcontrollers', unit_price: 1750.00, qty: 95, reorder_level: 30, part_number: 'MCU-ESP32-W' },
@@ -27,15 +25,12 @@ const INITIAL_INVENTORY = [
 ];
 
 export default function App() {
-  // Navigation State
   const [currentTab, setCurrentTab] = useState('dashboard');
 
-  // Backend Sync & Status State
-  const [syncStatus, setSyncStatus] = useState('connecting'); // 'synced' | 'syncing' | 'error' | 'connecting'
+  const [syncStatus, setSyncStatus] = useState('connecting');
   const [lastSyncTime, setLastSyncTime] = useState(null);
   const [syncErrorMsg, setSyncErrorMsg] = useState('');
 
-  // Business Data State (seeded with initial electronic parts)
   const [inventory, setInventory] = useState(INITIAL_INVENTORY);
   const [lowStockItems, setLowStockItems] = useState(() =>
     INITIAL_INVENTORY.filter((item) => item.qty <= item.reorder_level)
@@ -74,13 +69,11 @@ export default function App() {
   const [orderPagination, setOrderPagination] = useState({ page: 1, limit: 10, total: 3, totalPages: 1 });
   const [orderFilterStatus, setOrderFilterStatus] = useState('All');
 
-  // UI State
   const [searchQuery, setSearchQuery] = useState('');
   const [inventoryCategoryFilter, setInventoryCategoryFilter] = useState('All');
   const [isNewOrderModalOpen, setIsNewOrderModalOpen] = useState(false);
   const [toasts, setToasts] = useState([]);
 
-  // New Order Form State
   const [newOrderForm, setNewOrderForm] = useState({
     customer_name: '',
     item_id: '',
@@ -89,7 +82,6 @@ export default function App() {
   });
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
-  // Helper: Show Toast
   const showToast = useCallback((message, type = 'success') => {
     const id = Date.now() + Math.random();
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -98,7 +90,6 @@ export default function App() {
     }, 4000);
   }, []);
 
-  // Main Sync Function: fetches and synchronizes state from backend PostgreSQL
   const syncWithBackend = useCallback(async (silent = false) => {
     if (!silent) setSyncStatus('syncing');
 
@@ -158,7 +149,6 @@ export default function App() {
     }
   }, [orderFilterStatus, orderPagination.page, orderPagination.limit]);
 
-  // Initial Sync & Periodic Polling (every 6 seconds for continuous live reactivity)
   useEffect(() => {
     syncWithBackend(false);
     const interval = setInterval(() => {
@@ -167,7 +157,6 @@ export default function App() {
     return () => clearInterval(interval);
   }, [syncWithBackend]);
 
-  // Order Actions Handlers
   const handleApproveOrder = async (orderId) => {
     try {
       const res = await api.approveOrder(orderId);
@@ -208,7 +197,6 @@ export default function App() {
     }
   };
 
-  // Submit New Order
   const handleCreateOrderSubmit = async (e) => {
     e.preventDefault();
     if (!newOrderForm.customer_name || !newOrderForm.item_id || !newOrderForm.req_qty || !newOrderForm.due_date) {
@@ -241,7 +229,6 @@ export default function App() {
     }
   };
 
-  // Filtered Inventory
   const filteredInventory = useMemo(() => {
     return inventory.filter((item) => {
       const matchesCategory = inventoryCategoryFilter === 'All' || item.category === inventoryCategoryFilter;
@@ -254,13 +241,11 @@ export default function App() {
     });
   }, [inventory, inventoryCategoryFilter, searchQuery]);
 
-  // Unique Categories
   const categories = useMemo(() => {
     const set = new Set(inventory.map((i) => i.category));
     return ['All', ...Array.from(set)];
   }, [inventory]);
 
-  // Filtered Orders
   const filteredOrders = useMemo(() => {
     let list = orders;
     if (orderFilterStatus !== 'All') {
@@ -279,7 +264,6 @@ export default function App() {
 
   return (
     <div className="flex w-full h-full overflow-hidden bg-[#fcfcfd]">
-      {/* Toast Notifications */}
       <div className="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none">
         {toasts.map((t) => (
           <div
@@ -296,10 +280,8 @@ export default function App() {
         ))}
       </div>
 
-      {/* Sidebar Navigation */}
       <aside className="w-64 bg-white border-r border-gray-100 flex flex-col justify-between shrink-0 select-none">
         <div>
-          {/* Logo Section */}
           <div className="h-16 flex items-center px-6 border-b border-gray-100 gap-3">
             <div className="w-9 h-9 bg-gray-900 rounded-lg flex items-center justify-center text-white font-bold text-lg shadow-sm">
               V
@@ -310,7 +292,6 @@ export default function App() {
             </div>
           </div>
 
-          {/* Menu Items */}
           <div className="px-4 py-6">
             <p className="text-[11px] font-semibold tracking-wider text-gray-400 uppercase px-3 mb-3">Main Menu</p>
             <nav className="space-y-1">
@@ -386,7 +367,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* Footer info & live backend sync state */}
         <div className="p-4 border-t border-gray-100 space-y-3">
           <div className="bg-gray-50 p-3 rounded-xl border border-gray-100">
             <div className="flex items-center justify-between mb-1.5">
@@ -436,9 +416,7 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Main Content Area */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Top Header */}
         <header className="h-16 bg-white border-b border-gray-100 flex items-center justify-between px-8 shrink-0">
           <div className="flex items-center gap-3">
             <span className="text-sm font-semibold text-gray-900 capitalize">
@@ -451,7 +429,6 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            {/* Search Input */}
             <div className="relative">
               <i className="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-xs text-gray-400" />
               <input
@@ -463,7 +440,6 @@ export default function App() {
               />
             </div>
 
-            {/* Sync Pill */}
             <div
               className={`px-2.5 py-1 rounded-full text-xs font-semibold flex items-center gap-1.5 border ${
                 syncStatus === 'synced'
@@ -481,7 +457,6 @@ export default function App() {
               {syncStatus === 'synced' ? 'Live Synced' : syncStatus === 'syncing' ? 'Syncing...' : 'Local Catalog'}
             </div>
 
-            {/* New Order Button */}
             <button
               onClick={() => setIsNewOrderModalOpen(true)}
               className="px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-xl text-xs font-semibold shadow-xs flex items-center gap-2 transition-all cursor-pointer"
@@ -491,12 +466,9 @@ export default function App() {
           </div>
         </header>
 
-        {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-8 space-y-6">
-          {/* TAB: DASHBOARD */}
           {currentTab === 'dashboard' && (
             <div className="space-y-6 fade-in">
-              {/* Stat Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                 <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-xs">
                   <div className="flex items-center justify-between mb-3">
@@ -551,9 +523,7 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Two Column Layout: Trends & Reorder Alerts */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Sales Trends Chart Representation */}
                 <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-100 shadow-xs">
                   <div className="flex items-center justify-between mb-6">
                     <div>
@@ -589,7 +559,6 @@ export default function App() {
                   )}
                 </div>
 
-                {/* Critical Reorder Panel */}
                 <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-4">
@@ -633,10 +602,8 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB: ORDERS */}
           {currentTab === 'orders' && (
             <div className="space-y-6 fade-in">
-              {/* Header card with status filter buttons */}
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h1 className="text-xl font-bold text-gray-900">Customer Orders</h1>
@@ -662,7 +629,6 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Orders Table */}
               <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-sm text-gray-700">
@@ -767,7 +733,6 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB: INVENTORY */}
           {currentTab === 'inventory' && (
             <div className="space-y-6 fade-in">
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -858,7 +823,6 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB: LOW STOCK ALERTS */}
           {currentTab === 'lowstock' && (
             <div className="space-y-6 fade-in">
               <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-xs">
@@ -927,7 +891,6 @@ export default function App() {
             </div>
           )}
 
-          {/* TAB: SUPPLIER REQUESTS / GENERIC */}
           {currentTab === 'requests' && (
             <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-xs text-center space-y-3 fade-in">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto text-gray-500 text-xl">
@@ -943,7 +906,6 @@ export default function App() {
         </div>
       </main>
 
-      {/* New Order Modal Dialog */}
       {isNewOrderModalOpen && (
         <div className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full border border-gray-100 p-6 fade-in">

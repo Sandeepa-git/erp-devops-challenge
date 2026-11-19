@@ -1,4 +1,3 @@
-// Determine backend API Base URL based on environment or window location
 const getBaseURL = () => {
   if (typeof window !== 'undefined' && window.__ENV__ && window.__ENV__.API_URL) {
     return window.__ENV__.API_URL;
@@ -7,9 +6,9 @@ const getBaseURL = () => {
     const isLocal = window.location.protocol === 'file:' ||
                     window.location.hostname === 'localhost' ||
                     window.location.hostname === '127.0.0.1';
-    return isLocal ? 'http://localhost:5000/api' : '/api';
+    return isLocal ? 'http://localhost:8080/v1/api' : '/api';
   }
-  return 'http://localhost:5000/api';
+  return 'http://localhost:8080/v1/api';
 };
 
 const BASE_URL = getBaseURL();

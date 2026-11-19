@@ -1,6 +1,5 @@
 const { Pool } = require('pg');
 
-// PostgreSQL connection pool
 const poolConfig = process.env.DATABASE_URL
     ? {
         connectionString: process.env.DATABASE_URL,
@@ -24,7 +23,6 @@ const poolConfig = process.env.DATABASE_URL
 const pool = new Pool(poolConfig);
 
 pool.on('connect', () => {
-    // Only log in non-test environments if debug is desired
     if (process.env.NODE_ENV !== 'production') {
         console.log('[DB Pool] New client connected to PostgreSQL');
     }

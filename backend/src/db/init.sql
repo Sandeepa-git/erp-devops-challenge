@@ -1,7 +1,6 @@
 DROP TABLE IF EXISTS orders CASCADE;
 DROP TABLE IF EXISTS inventory CASCADE;
 
--- Inventory
 CREATE TABLE inventory (
     id SERIAL PRIMARY KEY,
     item_name VARCHAR(255) NOT NULL,
@@ -13,7 +12,6 @@ CREATE TABLE inventory (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Orders
 CREATE TABLE orders (
     id SERIAL PRIMARY KEY,
     order_id VARCHAR(20) UNIQUE NOT NULL,
@@ -27,16 +25,12 @@ CREATE TABLE orders (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Indexes
 CREATE INDEX idx_orders_status ON orders(status);
 CREATE INDEX idx_orders_created_at ON orders(created_at);
 CREATE INDEX idx_orders_order_id ON orders(order_id);
 CREATE INDEX idx_orders_item_id ON orders(item_id);
 CREATE INDEX idx_inventory_category ON inventory(category);
 CREATE INDEX idx_inventory_low_stock ON inventory(qty, reorder_level);
-
-
--- Electronic Parts Inventory
 
 INSERT INTO inventory (item_name, category, unit_price, qty, reorder_level, part_number) VALUES
 ('Arduino Uno R3',                   'Microcontrollers',  2850.00,  180,   20, 'MCU-ARD-UNO'),
@@ -59,9 +53,6 @@ INSERT INTO inventory (item_name, category, unit_price, qty, reorder_level, part
 ('LM2596 Step-Down Converter',       'Power Modules',      420.00,    5,   15, 'PWR-LM2596'),
 ('nRF24L01+ Wireless Module',        'Communication',      480.00,  350,   50, 'COM-NRF24'),
 ('HC-05 Bluetooth Module',           'Communication',     1350.00,  180,   30, 'COM-BT-HC05');
-
-
--- Distribution Orders
 
 INSERT INTO orders (order_id, customer_name, status, item_id, req_qty, part_number, due_date, created_at) VALUES
 ('ORD-95774', 'TechZone Solutions',    'Approved',   2,   50, 'MCU-ESP32-W',   '2026-06-30 17:00', '2026-06-15 09:30'),

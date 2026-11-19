@@ -2,8 +2,6 @@ const erpModel = require('../models/erpModel');
 
 class ERPController {
 
-    // Orders
-
     async getOrders(req, res) {
         try {
             const { status = 'All', page = 1, limit = 10 } = req.query;
@@ -90,7 +88,6 @@ class ERPController {
         }
     }
 
-    // Inventory
     async getInventory(req, res) {
         try {
             const inventory = await erpModel.getAllInventory();
@@ -110,8 +107,6 @@ class ERPController {
             res.status(500).json({ success: false, message: 'Failed to fetch low-stock items' });
         }
     }
-
-    // Dashboard
 
     async getDashboardStats(req, res) {
         try {
