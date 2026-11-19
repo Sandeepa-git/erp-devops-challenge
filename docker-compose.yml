@@ -11,11 +11,6 @@ services:
       - "${DB_PORT:-5432}:5432"
     volumes:
       - ./backend/src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-      # TODO [Task 4 - Reliability & Persistence]:
-      # Database data is currently ephemeral. Configure a named volume to persist
-      # PostgreSQL data across container restarts and recreations (/var/lib/postgresql/data).
-    # TODO [Task 3 & 4 - Health Check]:
-    # Add a healthcheck to verify that PostgreSQL is ready to accept connections (pg_isready).
 
   backend:
     build:
@@ -24,22 +19,12 @@ services:
     container_name: erp_backend
     restart: unless-stopped
     environment:
-      # TODO [Task 3 - Troubleshooting]:
-      # The backend service is currently unable to communicate with the database container.
-      # Investigate the connection string and container networking.
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@localhost:5432/${POSTGRES_DB:-erp_db}
       PORT: ${BACKEND_PORT:-5000}
       NODE_ENV: production
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000,http://127.0.0.1:3000}
-    # TODO [Task 2 & 3 - Port Mapping]:
-    # The frontend client runs in the user's web browser and needs to query the backend API.
-    # Expose and map the backend API port to the host machine.
     depends_on:
       - db
-      # TODO [Task 3 & 4 - Dependency Order]:
-      # Ensure the backend only starts once the database is fully healthy and ready to accept queries.
-    # TODO [Task 4 - Health Check]:
-    # Add a healthcheck to verify the backend API health status (/health).
 
   frontend:
     build:
@@ -51,10 +36,3 @@ services:
       - "${FRONTEND_PORT:-3000}:80"
     depends_on:
       - backend
-      # TODO [Task 3 & 4 - Dependency Order]:
-      # Ensure frontend waits for backend service readiness.
-    # TODO [Task 4 - Health Check]:
-    # Add a healthcheck to verify the frontend web server is responding.
-
-# TODO [Task 4 - Volumes]:
-# Define the persistent named volume here for PostgreSQL data persistence.
