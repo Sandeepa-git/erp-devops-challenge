@@ -1,4 +1,4 @@
-# 🚗 Thrusha Motors ERP — CloudSpace DevOps Challenge
+# Thrusha Motors ERP — CloudSpace DevOps Challenge
 
 Welcome to the **CloudSpace team selection challenge**. Read this whole file before you start.
 
@@ -193,4 +193,4 @@ Every team **must** follow these rules. Breaking any rule can lead to **disquali
 
 ---
 
-**Good luck, engineers! Troubleshoot it, containerize it, ship it.** 🚀
+**Good luck, engineers! Troubleshoot it, containerize it, ship it.** 
