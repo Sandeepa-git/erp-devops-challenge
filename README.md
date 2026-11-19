@@ -98,7 +98,7 @@ graph TD
 
 ### Architectural Breakdown
 - **Presentation Tier (Frontend)**:
-  Single-Page Application (SPA) built with responsive HTML5, Tailwind CSS, and vanilla JS (`ERPAPIClient`). Served via a minimal `nginx:1.25-alpine` container.
+  Single-Page Application (SPA) built with React 18, Tailwind CSS, and FontAwesome with real-time backend synchronization. Packaged via multi-stage Docker build and served via an optimized `nginx:1.25-alpine` container.
 - **Application Tier (Backend API)**:
   Secure Node.js (v18 Alpine) REST API built on Express, secured with Helmet, dynamic CORS validation, and rate limiting. Connects to PostgreSQL using a connection pool (`pg`). Exposes a `/health` endpoint and `/api` business endpoints.
 - **Data Tier (PostgreSQL)**:
@@ -112,7 +112,7 @@ graph TD
 
 | Component | Technology | Version / Base Image | Purpose |
 | :--- | :--- | :--- | :--- |
-| **Frontend** | Vanilla JS / Tailwind CSS | `nginx:1.25-alpine` | Web UI & Static Asset Serving |
+| **Frontend** | React 18 / Tailwind CSS | `nginx:1.25-alpine` | Web UI & Static Asset Serving |
 | **Backend API** | Node.js / Express.js | `node:18-alpine` | REST API, Business Logic & DB Pool |
 | **Database** | PostgreSQL | `postgres:15-alpine` | Relational Data Store & Seed Schema |
 | **Orchestration** | Docker Compose | Compose Specification v2+ | Multi-Container Local Deployment |
