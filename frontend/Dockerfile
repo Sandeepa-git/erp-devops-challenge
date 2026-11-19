@@ -7,9 +7,11 @@ WORKDIR /usr/share/nginx/html
 RUN rm -rf ./*
 COPY index.html ./index.html
 
-# Security & verification health check
-HEALTHCHECK --interval=15s --timeout=3s --retries=3 \
-  CMD wget -qO- http://127.0.0.1/ || exit 1
+# ==============================================================================
+# TODO [Task 1 & 4 - Reliability]:
+# Implement a container-level HEALTHCHECK instruction to verify that
+# Nginx is serving the frontend web application (http://127.0.0.1/).
+# ==============================================================================
 
 EXPOSE 80
 

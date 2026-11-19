@@ -1,23 +1,26 @@
 FROM node:18-alpine
 
-# Environment configuration
-ENV NODE_ENV=production
+# Set working directory
 WORKDIR /app
 
-# Install production dependencies only (layer caching)
+# Install production dependencies
 COPY package*.json ./
-RUN npm ci --omit=dev || npm install --omit=dev
+RUN npm install --omit=dev
 
 # Copy application source code
 COPY . .
 
-# Secure container by creating/using non-root user
-RUN chown -R node:node /app
-USER node
+# ==============================================================================
+# TODO [Task 1 & 4 - Security]:
+# For production security, containers should NOT run as the root user.
+# Configure this container to execute under the non-root 'node' user.
+# ==============================================================================
 
-# Container healthcheck
-HEALTHCHECK --interval=15s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:5000/health || exit 1
+# ==============================================================================
+# TODO [Task 1 & 4 - Reliability]:
+# Implement a container-level HEALTHCHECK instruction that queries
+# the backend service health endpoint (http://127.0.0.1:5000/health).
+# ==============================================================================
 
 EXPOSE 5000
 
