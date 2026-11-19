@@ -34,7 +34,7 @@ Try on your own first. Open a hint only when you are stuck.
 
 <br>
 
-A house can look perfect from the street, but if the front door opens onto nothing, nobody gets inside. Follow the **very first path** the browser takes when the page loads. Does it really lead somewhere?
+A browser can only render what the entry point actually manages to load. Something that is **referenced** is not always something that **exists**.
 
 </details>
 
@@ -43,7 +43,7 @@ A house can look perfect from the street, but if the front door opens onto nothi
 
 <br>
 
-Two neighbours can live on the same street and never meet if one of them keeps knocking on the **wrong house number**. Listen to what the backend **announces when it wakes up**, then look at **where the frontend is knocking**.
+The backend is not silent about itself when it starts. Every request the browser sends carries an **address**, and not every address leads to a running service.
 
 </details>
 
@@ -52,7 +52,7 @@ Two neighbours can live on the same street and never meet if one of them keeps k
 
 <br>
 
-You cannot cook in the kitchen if the recipe was left in the garage. Ask yourself **where the builder is standing**, and **where the recipe was left**.
+A build instruction runs exactly **where the image is standing** at that moment, not where you might expect it to be.
 
 </details>
 
@@ -61,7 +61,7 @@ You cannot cook in the kitchen if the recipe was left in the garage. Ask yoursel
 
 <br>
 
-The courier went to collect the parcel from the shelf the **old warehouse** used. This warehouse works differently. Find out **where it really stacks its finished goods**.
+Before copying something from one stage to another, it is worth knowing what the earlier stage **really left behind**.
 
 </details>
 
@@ -70,7 +70,7 @@ The courier went to collect the parcel from the shelf the **old warehouse** used
 
 <br>
 
-You do not need to build the delivery truck yourself: the **marketplace** already has good ones. One of them **opens the gate**, another one **loads and ships**, and **each parcel needs its own trip**. And never write the key on the door. Keep it in the **vault**.
+Docker already maintains **official building blocks** for GitHub Actions. Two images mean **two separate journeys**. A token written in plain text is a token for **everyone**.
 
 </details>
 
@@ -79,7 +79,7 @@ You do not need to build the delivery truck yourself: the **marketplace** alread
 
 <br>
 
-The **logs never lie**. Read the whole error, not just the last line.
+Every failure leaves a **trace**. The answer is rarely in the **last line**.
 
 </details>
 
