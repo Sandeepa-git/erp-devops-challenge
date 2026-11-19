@@ -8,20 +8,80 @@ Welcome to the **CloudSpace team selection challenge**. Read this whole file bef
 
 **Thrusha Motors (Pvt) Ltd.** uses an internal **ERP system** to manage its electronic parts inventory, customer orders, low-stock alerts and sales dashboard. An **intern** worked on this system, made a few changes "to make it work on my machine" and pushed them straight to the repository. Since then, nothing works the way it should. The company has called you in as a **Senior DevOps Engineer** to troubleshoot it, fix it and ship it.
 
-The trouble starts with the **frontend**. When it is started by hand, the dev server comes up without complaint, but the browser shows **nothing except a white page**. Every React app needs a **front door**: the very first page the browser loads is supposed to lead it into the app. It looks like the intern pointed that page at a door that **nobody lives behind**.
+The trouble starts with the **frontend**. When it is started by hand, the dev server comes up without complaint, but the browser shows **nothing except a white page**.
 
-Once the page finally loads, the **Backend Sync** box in the sidebar stays **red** and the orders never arrive, even though the backend answers perfectly when it is called directly. The frontend is **knocking on the wrong door**. Watch **where the browser sends its requests**, then listen to the backend: it tells you **which port it lives on** and **under which path it serves its data**. Somewhere in the frontend code there is **a single place** that decides the backend's address.
+Once the page finally loads, the **Backend Sync** box in the sidebar stays **red** and the orders never arrive, even though the backend answers perfectly when it is called directly.
 
-Next, the intern tried Docker. The **backend image does not even build**. npm is standing in **one room**, while the **list of things it needs to install** was left behind in **another room**. Ask yourself: where is the build **actually standing** when it runs?
+Next, the intern tried Docker. The **backend image does not even build**.
 
-The **frontend image** is no better. The React app compiles, but the **final stage cannot find what it is supposed to serve**. The intern copied this setup from an old project that used a **different build tool**, and every build tool puts its finished product in **its own place**.
+The **frontend image** is no better. The React app compiles, but the **final stage of the build fails**.
 
 When everything is fixed, the whole system must come up with **one single command**: `docker compose up -d --build`. The database must be **healthy**, the ERP must open at http://localhost:3000, the sidebar must show a green **Synced (:5000)**, and orders must be able to be approved, completed, cancelled and returned.
 
-Finally, Thrusha Motors wants delivery to be automatic. Build a **GitHub Actions** workflow inside `.github/workflows/` that runs on every **push to `main`**, logs in to **Docker Hub**, and **builds and pushes both the backend and the frontend images**, tagged with **your team name**. Keep the access token out of your files, because GitHub has **repository secrets** for exactly this. The official Docker actions on the GitHub Marketplace will help: one of them **logs you in**, another one **builds and pushes**, and you will need it **once per service**, each with its **own build context**.
+Finally, Thrusha Motors wants delivery to be automatic. Build a **GitHub Actions** workflow inside `.github/workflows/` that runs on every **push to `main`** and **builds and pushes both the backend and the frontend images** to **Docker Hub**, tagged with **your team name**.
 
 > [!NOTE]
-> The business logic (orders, inventory, dashboard) is fine. The problems are only in **configuration, connections and Dockerfiles**. Read every error message carefully.
+> The business logic (orders, inventory, dashboard) is fine. The problems are only in **configuration, connections and the container setup**.
+
+---
+
+## 💡 Hints
+
+Try on your own first. Open a hint only when you are stuck.
+
+<details>
+<summary><b>Hint 1 — The white page</b></summary>
+
+<br>
+
+A house can look perfect from the street, but if the front door opens onto nothing, nobody gets inside. Follow the **very first path** the browser takes when the page loads. Does it really lead somewhere?
+
+</details>
+
+<details>
+<summary><b>Hint 2 — The red Backend Sync</b></summary>
+
+<br>
+
+Two neighbours can live on the same street and never meet if one of them keeps knocking on the **wrong house number**. Listen to what the backend **announces when it wakes up**, then look at **where the frontend is knocking**.
+
+</details>
+
+<details>
+<summary><b>Hint 3 — The backend image</b></summary>
+
+<br>
+
+You cannot cook in the kitchen if the recipe was left in the garage. Ask yourself **where the builder is standing**, and **where the recipe was left**.
+
+</details>
+
+<details>
+<summary><b>Hint 4 — The frontend image</b></summary>
+
+<br>
+
+The courier went to collect the parcel from the shelf the **old warehouse** used. This warehouse works differently. Find out **where it really stacks its finished goods**.
+
+</details>
+
+<details>
+<summary><b>Hint 5 — Shipping to Docker Hub</b></summary>
+
+<br>
+
+You do not need to build the delivery truck yourself: the **marketplace** already has good ones. One of them **opens the gate**, another one **loads and ships**, and **each parcel needs its own trip**. And never write the key on the door. Keep it in the **vault**.
+
+</details>
+
+<details>
+<summary><b>Hint 0 — When nothing makes sense</b></summary>
+
+<br>
+
+The **logs never lie**. Read the whole error, not just the last line.
+
+</details>
 
 ---
 
